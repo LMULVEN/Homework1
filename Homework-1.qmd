@@ -1,0 +1,162 @@
+---
+title: "Homework 1"
+subtitle: "Research Methods, Spring 2024"
+author: Leila Mulveny
+format:
+  pdf:
+    output-file: "mulveny-l-hwk1-1"
+    output-ext:  "pdf"
+    header-includes:
+      - \usepackage{float}
+      - \floatplacement{table}{H}
+      - \usepackage{hyperref}
+abstract: |
+  \href{https://github.com/LMULVEN/Homework1}{Homework 1: Repository} 
+---
+
+```{r}
+#| include: false
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, readr, readxl, hrbrthemes, fixest,
+               scales, gganimate, gapminder, gifski, png, tufte, plotly, OECD,
+               ggrepel, survey, foreign, devtools, pdftools, kableExtra, modelsummary,
+               kableExtra)
+```
+
+
+
+```{r}
+#| include: false
+#| eval: true
+ 
+load("Hwk1_workspace.Rdata")
+```
+
+
+\newpage
+# Enrollment Data
+Answer the following based on the enrollment data:
+
+\vspace{.2in}
+\noindent 1. How many observations exist in your current dataset?<br>
+
+After creating the “full.ma.data” object which represents the enrollment data from 2010-2015, counting the total number of plans in the full data set yields `r format(tot.obs, big.mark=",")` observations. So, there are `r format(tot.obs, big.mark=",")` unique combinations of contract/plan/county/year. 
+
+\newpage
+\noindent 2. How many different *plan_types* exist in the data? <br>
+
+Creating a table of the unique plan types and summarizing the counts of each unique value in the “plan_type” column in the “full.ma.data” object shows that we have `r nrow(plan.type.table)` total plan types. 
+
+\newpage
+\noindent 3. Provide a table of the count of plans under each plan type in each year.<br>
+
+See @tbl-plans.
+
+```{r} 
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: "Plan types by year"
+
+options(knitr.kable.NA = 0)
+knitr::kable(plan.type.year1, 
+             col.names=c("Plan Type","2010","2011",
+                         "2012","2013","2014","2015"),
+             format.args=list(big.mark=","), booktabs = TRUE) %>%
+             kable_styling(latex_options=c("scale_down"))
+```
+
+
+
+
+\newpage
+\noindent 4. Remove all special needs plans (SNP), employer group plans (eghp), and all "800-series" plans. Provide an updated table after making these exclusions.
+
+To remove all special needs plans (SNP), employer group plans (eghp), and all “800-series” plans I filtered the ‘full.ma.data’ under those restrictions and created a new final.plans object for which the second table of plan types displays. 
+ @tbl-plans2
+
+```{r}
+#| echo: false
+#| label: tbl-plans2
+#| tbl-cap: Revised plan types by year
+
+options(knitr.kable.NA = 0)
+knitr::kable(plan.type.year2, 
+             col.names=c("Plan Type","2010","2011",
+                         "2012","2013","2014","2015"),
+             format.args=list(big.mark=","), booktabs = TRUE) %>%
+             kable_styling(latex_options=c("scale_down"))
+``` 
+
+
+
+
+\newpage
+\noindent 5. Merge the the contract service area data to the enrollment data and restrict the data only to contracts that are approved in their respective counties. Limit your dataset only to plans with non-missing enrollment data. Provide a graph showing the average number of Medicare Advantage enrollees per county from 2010 to 2015.<br>
+
+To merge the contract service area data to the enrollment data is to use the inner join operation that combines rows from both datasets based on a related column between them (contractid, fips, year). To limit the dataset to plans with non-missing enrollment data I filtered out the missing enrollment data just using the remove function. The resulting dataset forms the graph of average enrollments per country from 2010-2015. 
+ @fig-enroll.
+
+```{r}
+#| echo: false
+#| label: fig-enroll
+#| fig-cap: "Average Enrollment"
+
+fig.avg.enrollment
+```
+
+
+\newpage
+# Premium Data
+
+\noindent 6. Merge the plan characteristics data to the dataset you created in Step 5 above. Provide a graph showing the average premium over time. <br>
+
+To merge in the market penetration data I used the left join operation which combines the rows from “final.data” with the rows from the modified “ma.penetration.data” based on the common columns specified by the “fips” and “year” argument. The rows from “final.data” are thus retained in the result and if there are matching rows in “ma.penetration.data”, those values are included. Then we fill in the state information by creating a table of unique state names and then merging it back into the original data. After reading in the premium data, we can merge the premium data into the final data set to form the graph of average premiums over time. The spike in premiums in 2014 occurs because all of the $0 premiums for 2014 were recorded as “missing” and therefore excluded from the data, inflating the average premium value for that year. 
+ @fig-premium. 
+
+```{r}
+#| echo: false
+#| label: fig-premium
+#| fig-cap: "Average Premiums"
+
+fig.avg.premium
+```
+
+
+
+\newpage
+\noindent 7. Provide a graph showing the percentage of $0 premium plans over time. 
+
+The graph of the percentage of $0 premium plans over time, @fig-zero, confirms the reasoning behind the spike in premiums in @fig-premium. 
+
+
+
+```{r}
+#| echo: false
+#| label: fig-zero
+#| fig-cap: "Share of 0 premium plans"
+
+fig.percent.zero
+```
+
+
+\newpage
+# Summary Questions
+
+
+\vspace{.2in}
+\noindent 8. Why did we drop the "800-series" plans?<br>
+
+We drop the “800-series” (“Employer Group Waiver Plans”) plans because they are not available to all people. Summaries including these plans are not reflective of the average enrollee’s experience in Medicare Advantage, so we drop them. 
+
+
+\newpage
+\noindent 9. Why do so many plans charge a $0 premium? What does that really mean to a beneficiary?<br>
+
+The $0 premium is really just a reflection of an added premium above Part B of Medicare. Medicare Advantage plans (Part C) provide the same coverage as original Medicare (Part A and Part B), but with additional benefits. Beneficiaries are still paying premiums on Part B, but a $0 premium just means that they are not paying premiums in excess of the Part B premium. 
+
+
+\newpage
+\noindent 10. Briefly describe your experience working with these data (just a few sentences). Tell me one thing you learned and one thing that really aggravated you.<br>
+
+This data analysis has been on a much larger scale than my previous ECON lab assignments, so there was definitely a learning curve in trying to understand what is going on in the background of my computer when I am creating these datasets. I learned the left join and inner join operations, for which the in-class explanation helped me to intuitively think about/understand what is happening when carrying out the operation in merging datasets. I think where I was getting the most frustrated was in the simple things like making sure my file paths were consistent, and having to frequently check my current working directory and then change it to be able to execute any of the code. However I think that I came to understand what I was actually doing through the trial and error process, and debugging those simple directory-related error messages.  
